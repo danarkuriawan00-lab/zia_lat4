@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Asesmen SDN 1 Gondang</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@800;900&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0284c7;
+            --secondary-blue: #3b82f6;
+            --accent-green: #10b981;
+            --bg-gray: #f8fafc;
+        }
+
+        body {
+            background-color: #0f172a;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        /* Ambient glowing background decoration */
+        .bg-glow {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.08) 0%, rgba(0, 0, 0, 0) 70%);
+            top: -10%;
+            left: -10%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow-right {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.05) 0%, rgba(0, 0, 0, 0) 70%);
+            bottom: -10%;
+            right: -10%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100vh;
+            max-height: 850px;
+            background-color: #ffffff;
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        @media (min-width: 640px) {
+            .app-container {
+                height: 92vh;
+                border-radius: 28px;
+            }
+        }
+
+        .font-sahabat {
+            font-family: 'Montserrat', sans-serif;
+            letter-spacing: 0.12em;
+            background: linear-gradient(to bottom, #0f172a, #334155);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.1));
+        }
+
+        .btn-masuk {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #059669 100%);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn-masuk:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-nav {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, #0369a1 100%);
+            border-radius: 14px;
+            color: white;
+            padding: 14px 22px;
+            font-weight: 600;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px -4px rgba(2, 132, 199, 0.3);
+        }
+
+        .option-item {
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #e2e8f0;
+            background-color: #ffffff;
+        }
+
+        .option-item:hover {
+            border-color: #cbd5e1;
+            background-color: #f8fafc;
+            transform: scale(1.01);
+        }
+
+        .selected-option {
+            background-color: #eff6ff !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.15);
+        }
+
+        #loading-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.9);
+            backdrop-filter: blur(6px);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            color: white;
+        }
+
+        .input-field {
+            background-color: #f8fafc;
+            color: #1e293b;
+            text-align: center;
+            font-weight: 600;
+            padding: 16px;
+            border-radius: 14px;
+            width: 100%;
+            border: 2px solid #e2e8f0;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-blue);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+        }
+
+        .modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            padding: 24px;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 28px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            animation: modalPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Question Slide transition animation */
+        .slide-in {
+            animation: slideIn 0.25s ease-out;
+        }
+
+        @keyframes slideIn {
+            0% { transform: translateX(12px); opacity: 0; }
+            100% { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Custom Scrollbar for app container */
+        .app-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        .app-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .app-container::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+<div class="bg-glow-right"></div>
+
+<div class="app-container p-6" id="app">
+    <!-- Loading Overlay -->
+    <div id="loading-overlay">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-blue-500 border-t-transparent mb-4"></div>
+        <p class="font-bold text-lg" id="loading-text">Memproses Data...</p>
+    </div>
+
+    <!-- Top Action Bar (Mute Toggle) -->
+    <div class="flex justify-end items-center absolute top-4 right-4 z-20">
+        <button id="sound-toggle-btn" onclick="toggleSound()" class="bg-slate-100 hover:bg-slate-200 text-slate-600 p-2.5 rounded-full transition-all flex items-center justify-center shadow-sm active:scale-95" title="Mute/Unmute">
+            <svg id="sound-icon-on" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+            </svg>
+            <svg id="sound-icon-off" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15zm12.95 2.121l-3.536-3.536m0 0L11.464 10m3.536 3.536L18.536 10M15 13.536l-3.536 3.536"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="flex flex-col items-center justify-center h-full my-auto py-4">
+        <div class="mb-6 animate-bounce">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiUAgnz3M-C0b4aP4NCccOVpRTBjimetBgZhyphenhyphenkGcMIcG3YY7RhacnjOZFFonylLQGbQ0LQHR7n4cOk7XN8mDb9YmRrXgJi5q7yZCEEKpQ4CYuB9WaZLCNw35_qVPvcRTizOMvZXsYVqmAOSfxDv9bUmpB9z_-2G3ecR_C1CONgsQ5-5U5NA2B9rpU4zfJnZ/w200-h200/sdn%20gng%201.png" alt="Logo SDN 1 Gondang" class="w-28 h-28 object-contain">
+        </div>
+
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-slate-800 leading-tight uppercase">Selamat Datang</h1>
+            <h2 class="text-5xl font-black mb-3 font-sahabat uppercase tracking-wide">Sahabat</h2>
+            <p class="text-[10px] text-slate-500 font-bold tracking-widest uppercase px-4 leading-relaxed">
+                Sistem Asesmen Hasil Amanah Berprestasi Akurat & Terpercaya
+            </p>
+        </div>
+
+        <div class="w-full space-y-4">
+            <div>
+                <label class="block text-left text-xs font-bold text-slate-500 mb-1.5 uppercase ml-1">Nama Lengkap</label>
+                <input type="text" id="name" placeholder="NAMA LENGKAP SISWA" class="input-field uppercase">
+            </div>
+            <div>
+                <label class="block text-left text-xs font-bold text-slate-500 mb-1.5 uppercase ml-1">Nomor Absen</label>
+                <input type="number" id="absen" placeholder="CONTOH: 14" class="input-field">
+            </div>
+            <button onclick="startExam()" class="w-full py-4 mt-4 rounded-xl btn-masuk text-white font-bold text-lg shadow-lg uppercase tracking-wide active:scale-[0.98]">
+                Mulai Ujian
+            </button>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <p class="text-[10px] text-slate-400 font-semibold uppercase">SDN 1 GONDANG - NGANJUK</p>
+        </div>
+    </div>
+
+    <!-- Exam Screen -->
+    <div id="exam-screen" class="hidden flex flex-col h-full">
+        <!-- Progress Bar & Top Navigation Info -->
+        <div class="w-full bg-slate-100 rounded-full h-2 mb-4">
+            <div id="progress-bar" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <div class="flex justify-between items-center mb-4">
+            <span class="bg-blue-600 text-white px-3.5 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                Soal <span id="current-number">1</span> / <span id="total-questions">0</span>
+            </span>
+            
+            <div class="flex items-center gap-2">
+                <!-- Palette Icon Button to Toggle Grid -->
+                <button onclick="toggleGridModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 p-2 rounded-xl transition-all shadow-sm active:scale-90" title="Navigasi Soal">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                </button>
+                <div class="bg-slate-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+                    <svg class="w-4 h-4 text-slate-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span id="timer" class="text-slate-700 font-mono font-bold text-xs">00:00</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Active Question Container -->
+        <div class="flex-grow flex flex-col justify-between overflow-y-auto pr-1">
+            <div id="question-wrapper" class="slide-in">
+                <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-5 mb-5 border-l-4 border-blue-500 shadow-sm">
+                    <p id="question-text" class="text-base font-bold text-slate-800 leading-relaxed">Memuat...</p>
+                </div>
+                <div id="options-container" class="space-y-3 mb-4"></div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 pb-2 gap-3">
+            <button onclick="prevQuestion()" id="prev-btn" class="btn-nav flex-1 opacity-50 active:scale-[0.97]" disabled>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                KEMBALI
+            </button>
+            <button onclick="handleNext()" class="btn-nav flex-1 active:scale-[0.97]" id="next-btn">
+                LANJUT
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ALERT/NOTIFICATION MODAL -->
+<div id="alert-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h3 id="alert-title" class="text-lg font-bold text-slate-800 mb-1">Informasi</h3>
+        <p id="alert-message" class="text-sm text-slate-500 mb-5 leading-relaxed">Pesan pemberitahuan.</p>
+        <button onclick="hideAlert()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-sm tracking-wide transition-all uppercase active:scale-[0.97]">
+            Mengerti
+        </button>
+    </div>
+</div>
+
+<!-- EXAM CONFIRMATION MODAL -->
+<div id="confirm-modal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+        </div>
+        <h3 class="text-lg font-bold text-slate-800 mb-1">Kirim Jawaban?</h3>
+        <p id="confirm-warning-text" class="text-sm text-slate-500 mb-5 leading-relaxed">Pastikan semua pertanyaan sudah terisi dengan teliti.</p>
+        <div class="flex gap-3">
+            <button onclick="hideConfirm()" class="flex-1 py-3 border border-slate-200 rounded-xl font-bold text-sm text-slate-500 hover:bg-slate-50 transition-all uppercase active:scale-[0.97]">Batal</button>
+            <button onclick="finishExam()" class="flex-1 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold text-sm transition-all uppercase shadow-md shadow-emerald-100 active:scale-[0.97]">Kirim</button>
+        </div>
+    </div>
+</div>
+
+<!-- QUESTION NAVIGATOR GRID MODAL -->
+<div id="grid-modal" class="modal-overlay">
+    <div class="modal-content max-w-[420px] !p-5">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-base font-bold text-slate-800">Peta Navigasi Soal</h3>
+            <button onclick="toggleGridModal()" class="text-slate-400 hover:text-slate-600">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+        <div class="grid grid-cols-5 gap-2 max-h-[280px] overflow-y-auto p-1 text-xs" id="grid-box-container">
+            <!-- Dynamically populated buttons -->
+        </div>
+        <div class="flex justify-between items-center mt-4 pt-3 border-t border-slate-100 text-[10px] text-slate-400 font-medium">
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-md bg-blue-100 border border-blue-400 block"></span> Terisi</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-md bg-slate-50 border border-slate-200 block"></span> Belum</span>
+            <span class="flex items-center gap-1"><span class="w-3 h-3 rounded-md bg-slate-800 block"></span> Aktif</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // URL Google Apps Script Anda
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbz1sq6Ks2rC3lIdcA3i9TRLPebUdny0st73zmcZXI7HVVSZ63hxJWsz3_rVOH3L0gdO/exec'; 
+
+    const questions = [
+      // Bagian 1: Keberagaman Diri & Teman (Analisis & Evaluasi)
+      { id: 1, text: "Di kelas 2A, Siti sangat mahir menari, sedangkan Lani sangat cepat dalam berlari. Perbedaan ini menunjukkan bahwa...", options: [{id:'A', text:'Lani lebih hebat daripada Siti'}, {id:'B', text:'Setiap anak memiliki keistimewaan yang berbeda'}, {id:'C', text:'Siti harus belajar berlari agar sama dengan Lani'}], correct: 'B' },
+      { id: 2, text: "Bayu memiliki rambut keriting, sedangkan Edo berambut lurus. Suatu hari, teman lain mengejek rambut Bayu. Sikap Edo yang mencerminkan nilai Pancasila adalah...", options: [{id:'A', text:'Diam saja karena bukan rambutnya yang diejek'}, {id:'B', text:'Menasihati teman tersebut bahwa semua ciptaan Tuhan itu baik'}, {id:'C', text:'Ikut tertawa agar dianggap kompak dengan teman lain'}], correct: 'B' },
+      { id: 3, text: "Kamu sangat suka membaca buku, tetapi teman sebangkumu sangat suka bermain bola dan sering mengajakmu bicara saat kamu membaca. Tindakan terbaikmu adalah...", options: [{id:'A', text:'Marah dan melaporkannya kepada guru'}, {id:'B', text:'Berhenti membaca agar temanmu senang'}, {id:'C', text:'Memberitahunya dengan sopan bahwa kamu butuh waktu tenang untuk membaca'}], correct: 'C' },
+      { id: 4, text: "Mengapa kita tidak boleh membeda-bedakan teman berdasarkan warna kulit atau bentuk tubuh?", options: [{id:'A', text:'Karena guru akan memberikan nilai buruk'}, {id:'B', text:'Karena perbedaan fisik adalah karunia Tuhan yang harus dihormati'}, {id:'C', text:'Karena semua orang memiliki baju yang sama'}], correct: 'B' },
+      { id: 5, text: "Perhatikan pernyataan ini: (1) Menghargai hobi teman, (2) Memaksa teman mengikuti kemauan kita, (3) Menolong teman tanpa melihat fisiknya. Perilaku yang benar ditunjukkan nomor...", options: [{id:'A', text:'(1) dan (2)'}, {id:'B', text:'(1) dan (3)'}, {id:'C', text:'(2) dan (3)'}], correct: 'B' },
+      { id: 6, text: "Keberagaman hobi di kelas bisa menjadi hal yang seru jika kita...", options: [{id:'A', text:'Mengadakan festival bakat untuk saling menunjukkan hobi'}, {id:'B', text:'Meminta semua teman memiliki hobi yang sama'}, {id:'C', text:'Melarang hobi yang menurut kita membosankan'}], correct: 'A' },
+      { id: 7, text: "Jika setiap orang di dunia ini memiliki wajah dan sifat yang sama persis, maka yang akan terjadi adalah...", options: [{id:'A', text:'Dunia menjadi sangat indah'}, {id:'B', text:'Kehidupan menjadi membosankan karena tidak ada keunikan'}, {id:'C', text:'Semua orang akan menjadi juara satu'}], correct: 'B' },
+      { id: 8, text: "Sikap \"Mengenal Perbedaan\" artinya kita...", options: [{id:'A', text:'Hanya mau tahu urusan diri sendiri'}, {id:'B', text:'Mau mengerti dan menghargai ciri khas orang lain'}, {id:'C', text:'Mencari-cari kesalahan orang yang berbeda dari kita'}], correct: 'B' },
+      { id: 9, text: "Manakah perilaku yang menunjukkan kamu \"Menerima Perbedaan\" fisik teman?", options: [{id:'A', text:'Meminta teman yang pendek untuk duduk di belakang'}, {id:'B', text:'Memuji teman hanya karena kulitnya putih'}, {id:'C', text:'Mengajak semua teman bermain tanpa peduli bentuk rambutnya'}], correct: 'C' },
+      { id: 10, text: "Keberagaman fisik di kelas adalah bukti bahwa Indonesia itu...", options: [{id:'A', text:'Kaya dan indah dalam perbedaan'}, {id:'B', text:'Lemah karena tidak seragam'}, {id:'C', text:'Sulit untuk bersatu'}], correct: 'A' },
+
+      // Bagian 2: Agama & Toleransi (Logika & Penerapan)
+      { id: 11, text: "Di sekolah, ada teman yang meminta izin untuk beribadah saat jam istirahat. Sikapmu yang paling tepat adalah...", options: [{id:'A', text:'Memintanya bermain dulu baru beribadah'}, {id:'B', text:'Mempersilakan dan tidak mengganggunya saat ibadah'}, {id:'C', text:'Mengikutinya karena ingin tahu cara ibadahnya'}], correct: 'B' },
+      { id: 12, text: "Gambar Bintang Emas pada Garuda Pancasila mengingatkan kita bahwa bangsa Indonesia adalah bangsa yang...", options: [{id:'A', text:'Beriman kepada Tuhan Yang Maha Esa'}, {id:'B', text:'Suka berperang demi keadilan'}, {id:'C', text:'Memiliki banyak gedung tinggi'}], correct: 'A' },
+      { id: 13, text: "Wayan beragama Hindu dan beribadah di Pura. Saat hari raya Nyepi, lingkungan rumah Wayan sangat tenang. Sikap tetangga Wayan yang beda agama sebaiknya...", options: [{id:'A', text:'Menghidupkan musik dengan keras agar ramai'}, {id:'B', text:'Menghormati ketenangan tersebut dengan tidak berisik'}, {id:'C', text:'Meminta Wayan untuk tidak merayakan hari raya'}], correct: 'B' },
+      { id: 14, text: "Perhatikan simbol-simbol tempat ibadah. Jika kamu melihat bangunan dengan kubah dan menara, itu adalah tempat ibadah umat...", options: [{id:'A', text:'Kristen'}, {id:'B', text:'Islam'}, {id:'C', text:'Buddha'}], correct: 'B' },
+      { id: 15, text: "Saat teman sedang beribadah, sikap kita adalah...", options: [{id:'A', text:'Menunggu dengan tenang dan tidak berisik'}, {id:'B', text:'Mengajaknya bermain'}, {id:'C', text:'Berteriak di depannya'}], correct: 'A' },
+      { id: 16, text: "Menghargai perbedaan agama sesuai dengan pengamalan Pancasila sila ke...", options: [{id:'A', text:'Satu (1)'}, {id:'B', text:'Dua (2)'}, {id:'C', text:'Tiga (3)'}], correct: 'A' },
+      { id: 17, text: "Ucapan selamat hari raya kepada teman yang beda agama merupakan bentuk...", options: [{id:'A', text:'Pemborosan'}, {id:'B', text:'Toleransi'}, {id:'C', text:'Kesombongan'}], correct: 'B' },
+      { id: 18, text: "Contoh sikap menghargai perbedaan adalah...", options: [{id:'A', text:'Hanya berteman dengan yang satu suku'}, {id:'B', text:'Memilih teman yang kaya saja'}, {id:'C', text:'Bermain dengan siapa saja tanpa membedakan'}], correct: 'C' },
+      { id: 19, text: "Manfaat hidup rukun dalam perbedaan adalah...", options: [{id:'A', text:'Suasana menjadi damai dan tenteram'}, {id:'B', text:'Sering terjadi pertengkaran'}, {id:'C', text:'Dijauhi teman'}], correct: 'A' },
+      { id: 20, text: "Semboyan bangsa Indonesia tentang keberagaman adalah...", options: [{id:'A', text:'Bersatu kita teguh'}, {id:'B', text:'Bhinneka Tunggal Ika'}, {id:'C', text:'Tut Wuri Handayani'}], correct: 'B' },
+
+      // Bagian 3: Lingkungan Bersih & Kotor (Analisis Kondisi)
+      { id: 21, text: "Mengapa udara di bawah pohon besar terasa lebih segar daripada di jalan raya?", options: [{id:'A', text:'Karena pohon memiliki kipas angin'}, {id:'B', text:'Karena pohon menghasilkan udara bersih dan menyerap debu'}, {id:'C', text:'Karena di bawah pohon tidak ada sinar matahari'}], correct: 'B' },
+      { id: 22, text: "Di sebuah kantin, banyak lalat hinggap di meja makan. Hal ini menandakan bahwa...", options: [{id:'A', text:'Kantin tersebut sangat laris'}, {id:'B', text:'Lingkungan kantin kotor dan tidak sehat'}, {id:'C', text:'Makanan di kantin sangat manis'}], correct: 'B' },
+      { id: 23, text: "Perhatikan ciri ini: (1) Air selokan lancar, (2) Banyak debu di meja, (3) Tidak ada bau busuk. Ciri lingkungan bersih ditunjukkan oleh nomor...", options: [{id:'A', text:'(1) dan (2)'}, {id:'B', text:'(1) dan (3)'}, {id:'C', text:'(2) dan (3)'}], correct: 'B' },
+      { id: 24, text: "Jika selokan di depan sekolah mampet karena sampah plastik, resiko terbesar saat hujan adalah...", options: [{id:'A', text:'Air meluap dan terjadi banjir di halaman sekolah'}, {id:'B', text:'Ikan-ikan di selokan akan berpindah tempat'}, {id:'C', text:'Siswa menjadi lebih senang bermain air'}], correct: 'A' },
+      { id: 25, text: "Lingkungan yang kotor dapat menjadi sarang nyamuk. Akibatnya bagi siswa adalah...", options: [{id:'A', text:'Siswa jadi malas belajar'}, {id:'B', text:'Siswa mudah terserang penyakit demam berdarah'}, {id:'C', text:'Siswa harus memakai seragam baru'}], correct: 'B' },
+      { id: 26, text: "Air yang sehat untuk digunakan mencuci tangan adalah air yang...", options: [{id:'A', text:'Berwarna agak kuning tapi tidak bau'}, {id:'B', text:'Dingin dan banyak ikannya'}, {id:'C', text:'Jernih, tidak berbau, dan tidak berwarna'}], correct: 'C' },
+      { id: 27, text: "Mengapa kita harus memisahkan sampah plastik dan sampah sisa makanan?", options: [{id:'A', text:'Agar sampah bisa diolah kembali sesuai jenisnya'}, {id:'B', text:'Agar tempat sampah terlihat penuh warna'}, {id:'C', text:'Agar petugas kebersihan tidak perlu bekerja'}], correct: 'A' },
+      { id: 28, text: "Kelas yang sehat adalah kelas yang memiliki ventilasi (jendela). Fungsinya adalah...", options: [{id:'A', text:'Agar siswa bisa melihat orang di luar'}, {id:'B', text:'Agar udara di dalam kelas bisa bertukar dan tetap segar'}, {id:'C', text:'Agar suara guru terdengar sampai keluar'}], correct: 'B' },
+      { id: 29, text: "Bau tidak sedap di sekitar tempat sampah berasal dari...", options: [{id:'A', text:'Plastik yang tertumpuk'}, {id:'B', text:'Sisa makanan yang membusuk'}, {id:'C', text:'Wadah botol kaca'}], correct: 'B' },
+      { id: 30, text: "Lingkungan sekolah yang bersih akan membuat kita...", options: [{id:'A', text:'Konsentrasi belajar dan merasa nyaman'}, {id:'B', text:'Ingin segera pulang ke rumah'}, {id:'C', text:'Merasa mengantuk karena terlalu bersih'}], correct: 'A' },
+
+      // Bagian 4: Menjaga Lingkungan & Kerjasama (Pemecahan Masalah)
+      { id: 31, text: "Kamu melihat temanmu membuang bungkus es krim di bawah meja kelas. Tindakanmu yang paling tepat adalah...", options: [{id:'A', text:'Memarahinya di depan kelas agar dia malu'}, {id:'B', text:'Mengingatkannya dengan baik untuk membuangnya ke tempat sampah'}, {id:'C', text:'Membiarkannya karena itu bukan sampahmu'}], correct: 'B' },
+      { id: 32, text: "Setiap hari Jumat, sekolah mengadakan \"Jumat Bersih\". Semua warga sekolah bekerjasama. Tujuan kerjasama ini adalah...", options: [{id:'A', text:'Pekerjaan membersihkan sekolah yang luas jadi ringan dan cepat'}, {id:'B', text:'Agar siswa tidak perlu masuk ke dalam kelas'}, {id:'C', text:'Supaya guru-guru bisa beristirahat'}], correct: 'A' },
+      { id: 33, text: "Bagaimana cara kerjasama menjaga lingkungan di rumah yang paling mudah dilakukan?", options: [{id:'A', text:'Membeli robot pembersih yang mahal'}, {id:'B', text:'Membagi tugas seperti menyapu, menyiram bunga, dan merapikan mainan'}, {id:'C', text:'Menunggu rumah sangat kotor baru dibersihkan bersama'}], correct: 'B' },
+      { id: 34, text: "Jika kamu membiarkan keran air di kamar mandi sekolah tetap menyala, kamu telah bersikap...", options: [{id:'A', text:'Dermawan karena berbagi air'}, {id:'B', text:'Rajin karena mengalirkan air'}, {id:'C', text:'Tidak peduli lingkungan dan boros energi'}], correct: 'C' },
+      { id: 35, text: "Di taman sekolah, ada papan pengumuman \"Jangan Injak Rumput\". Tindakanmu yang menunjukkan sikap disiplin adalah...", options: [{id:'A', text:'Berjalan di jalan setapak yang disediakan'}, {id:'B', text:'Tetap menginjak rumput kalau tidak ada guru'}, {id:'C', text:'Berlari di atas rumput dengan cepat agar tidak ketahuan'}], correct: 'A' },
+      { id: 36, text: "Manfaat dari menanam pohon bersama-sama di lingkungan sekolah adalah...", options: [{id:'A', text:'Membuat sekolah menjadi tempat sembunyi'}, {id:'B', text:'Menambah oksigen dan membuat sekolah lebih sejuk'}, {id:'C', text:'Supaya siswa bisa memanjat pohon saat istirahat'}], correct: 'B' },
+      { id: 37, text: "Kerja bakti di lingkungan rumah biasanya dilakukan pada hari libur. Sikap anak kelas 2 yang hebat adalah...", options: [{id:'A', text:'Tetap tidur karena hari libur adalah waktu istirahat'}, {id:'B', text:'Ikut membantu hal kecil seperti mengumpulkan sampah daun'}, {id:'C', text:'Menonton orang dewasa bekerja dari dalam rumah'}], correct: 'B' },
+      { id: 38, text: "Apa yang terjadi jika hanya satu orang yang bekerja bakti sementara yang lain hanya melihat?", options: [{id:'A', text:'Pekerjaan akan sangat sempurna'}, {id:'B', text:'Pekerjaan selesai sangat lama dan orang yang bekerja akan sangat lelah'}, {id:'C', text:'Lingkungan akan langsung menjadi sangat bersih'}], correct: 'B' },
+      { id: 39, text: "Kerjasama menjaga lingkungan sekolah adalah tanggung jawab dari...", options: [{id:'A', text:'Penjaga sekolah dan petugas kebersihan'}, {id:'B', text:'Ibu guru dan Bapak kepala sekolah'}, {id:'C', text:'Seluruh warga sekolah tanpa kecuali'}], correct: 'C' },
+      { id: 40, text: "Semboyan yang tepat untuk menjaga kebersihan adalah...", options: [{id:'A', text:'Bersih pangkal sehat'}, {id:'B', text:'Hemat pangkal kaya'}, {id:'C', text:'Rajin pangkal pandai'}], correct: 'A' },
+
+      // Bagian 5: Studi Kasus & Evaluasi Diri (HOTS)
+      { id: 41, text: "Siti melihat banyak kertas bekas di laci mejanya. Siti berpikir daripada dibuang, kertas itu bisa dijadikan mainan pesawat. Sikap Siti menunjukkan...", options: [{id:'A', text:'Kebiasaan mengotori meja'}, {id:'B', text:'Sikap peduli lingkungan dengan memanfaatkan sampah (daur ulang)'}, {id:'C', text:'Rasa malas untuk berjalan ke tempat sampah'}], correct: 'B' },
+      { id: 42, text: "Edo ingin bermain bola, tetapi halaman rumahnya penuh dengan daun kering. Tindakan yang mencerminkan tanggung jawab adalah...", options: [{id:'A', text:'Menyapu daun-daun itu dulu baru kemudian bermain'}, {id:'B', text:'Langsung bermain dan membiarkan daun berantakan'}, {id:'C', text:'Meminta ibu untuk menyapukan halaman agar ia bisa bermain'}], correct: 'A' },
+      { id: 43, text: "Mengapa kerjasama di sekolah lebih baik daripada bekerja sendirian?", options: [{id:'A', text:'Karena kita bisa mengobrol sambil bekerja'}, {id:'B', text:'Karena dengan kerjasama, semua beban pekerjaan terasa lebih ringan'}, {id:'C', text:'Karena kerjasama bisa membuat kita tidak perlu bekerja keras'}], correct: 'B' },
+      { id: 44, text: "Lingkungan rumah yang kotor bisa membuat anggota keluarga mudah sakit. Cara menjaga agar rumah tetap sehat adalah...", options: [{id:'A', text:'Menutup semua pintu dan jendela rapat-rapat'}, {id:'B', text:'Rutin membersihkan debu dan memastikan sinar matahari masuk'}, {id:'C', text:'Membeli banyak obat-obatan di rumah'}], correct: 'B' },
+      { id: 45, text: "Saat piket kelas, regu piket Senin saling berbagi tugas. Ada yang menyapu, ada yang menghapus papan tulis. Ini adalah pengamalan Pancasila sila...", options: [{id:'A', text:'Kedua'}, {id:'B', text:'Ketiga (Persatuan)'}, {id:'C', text:'Kelima'}], correct: 'B' },
+      { id: 46, text: "Apa yang kamu lakukan jika melihat tanaman di kelasmu mulai layu karena kering?", options: [{id:'A', text:'Meminta tanaman itu diganti dengan yang baru'}, {id:'B', text:'Memberinya air secukupnya agar segar kembali'}, {id:'C', text:'Membiarkannya sampai benar-benar mati'}], correct: 'B' },
+      { id: 47, text: "Mengapa menghargai perbedaan hobi teman bisa menciptakan lingkungan yang damai?", options: [{id:'A', text:'Karena tidak ada perselisihan atau saling ejek tentang kegemaran'}, {id:'B', text:'Karena semua teman akan memberikan hadiah kepada kita'}, {id:'C', text:'Karena hobi adalah hal yang paling penting di dunia'}], correct: 'A' },
+      { id: 48, text: "Manakah dari kegiatan berikut yang paling merusak lingkungan?", options: [{id:'A', text:'Menggunakan sepeda ke sekolah'}, {id:'B', text:'Membawa botol minum sendiri (tumbler)'}, {id:'C', text:'Membuang baterai bekas ke sungai'}], correct: 'C' },
+      { id: 49, text: "Jika kamu bekerjasama membersihkan kelas, perasaanmu akan menjadi...", options: [{id:'A', text:'Lelah dan benci kepada teman'}, {id:'B', text:'Senang karena kelas bersih dan akrab dengan teman'}, {id:'C', text:'Sedih karena tidak bisa bermain'}], correct: 'B' },
+      { id: 50, text: "Menjaga kebersihan lingkungan adalah cara kita mencintai...", options: [{id:'A', text:'Diri sendiri saja'}, {id:'B', text:'Orang lain saja'}, {id:'C', text:'Alam semesta ciptaan Tuhan'}], correct: 'C' }
+    ];
+
+    let currentQuestionIndex = 0;
+    let userAnswers = {};
+    let userData = { name: '', absen: '' };
+    let startTime;
+    let timerInterval;
+    let isSoundMuted = false;
+
+    // PROCEDURAL AUDIO SYNTH UTILITY (Web Audio API)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playBeep(type) {
+        if (isSoundMuted) return;
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'click') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
+                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'alert') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.25);
+            }
+        } catch (e) {
+            console.log("Audio API tidak didukung browser ini: ", e);
+        }
+    }
+
+    // Toggle Audio Mode
+    function toggleSound() {
+        isSoundMuted = !isSoundMuted;
+        const iconOn = document.getElementById('sound-icon-on');
+        const iconOff = document.getElementById('sound-icon-off');
+        if (isSoundMuted) {
+            iconOn.classList.add('hidden');
+            iconOff.classList.remove('hidden');
+        } else {
+            iconOn.classList.remove('hidden');
+            iconOff.classList.add('hidden');
+            playBeep('click');
+        }
+    }
+
+    // Custom Alert Utilities
+    function showAlert(title, message) {
+        playBeep('alert');
+        document.getElementById('alert-title').innerText = title;
+        document.getElementById('alert-message').innerText = message;
+        document.getElementById('alert-modal').style.display = 'flex';
+    }
+
+    // Hide Alert
+    function hideAlert() {
+        playBeep('click');
+        document.getElementById('alert-modal').style.display = 'none';
+    }
+
+    // Toggle Grid Navigator Modal
+    function toggleGridModal() {
+        playBeep('click');
+        const gridModal = document.getElementById('grid-modal');
+        if (gridModal.style.display === 'flex') {
+            gridModal.style.display = 'none';
+        } else {
+            renderGridPalette();
+            gridModal.style.display = 'flex';
+        }
+    }
+
+    // Populate Navigation Grid Numbers
+    function renderGridPalette() {
+        const container = document.getElementById('grid-box-container');
+        container.innerHTML = '';
+        
+        questions.forEach((q, idx) => {
+            const btn = document.createElement('button');
+            const isSelected = userAnswers[idx] !== undefined;
+            const isActive = currentQuestionIndex === idx;
+
+            btn.innerText = idx + 1;
+            
+            let btnClass = "py-3 rounded-xl font-bold text-center transition-all active:scale-90 ";
+            if (isActive) {
+                btnClass += "bg-slate-800 text-white shadow-md ring-2 ring-slate-400";
+            } else if (isSelected) {
+                btnClass += "bg-blue-100 text-blue-700 border border-blue-300 hover:bg-blue-200";
+            } else {
+                btnClass += "bg-slate-50 text-slate-500 border border-slate-200 hover:bg-slate-100";
+            }
+
+            btn.className = btnClass;
+            btn.onclick = () => {
+                jumpToQuestion(idx);
+                toggleGridModal();
+            };
+            container.appendChild(btn);
+        });
+    }
+
+    function jumpToQuestion(index) {
+        playBeep('click');
+        currentQuestionIndex = index;
+        renderQuestion();
+    }
+
+    function startExam() {
+        userData.name = document.getElementById('name').value.trim();
+        userData.absen = document.getElementById('absen').value.trim();
+
+        if (!userData.name || !userData.absen) {
+            showAlert("Isi Identitas", "Harap isi nama lengkap dan nomor absen dengan benar!");
+            return;
+        }
+
+        playBeep('success');
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('exam-screen').classList.remove('hidden');
+        document.getElementById('total-questions').innerText = questions.length;
+        
+        startTime = new Date();
+        timerInterval = setInterval(updateTimer, 1000);
+        renderQuestion();
+    }
+
+    function updateTimer() {
+        const diff = Math.floor((new Date() - startTime) / 1000);
+        const m = Math.floor(diff / 60).toString().padStart(2, '0');
+        const s = (diff % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${m}:${s}`;
+    }
+
+    function renderQuestion() {
+        const q = questions[currentQuestionIndex];
+        document.getElementById('current-number').innerText = currentQuestionIndex + 1;
+        document.getElementById('question-text').innerText = q.text;
+        document.getElementById('progress-bar').style.width = `${((currentQuestionIndex + 1) / questions.length) * 100}%`;
+
+        // Smooth slide-in transition
+        const qWrapper = document.getElementById('question-wrapper');
+        qWrapper.classList.remove('slide-in');
+        void qWrapper.offsetWidth; // Force Reflow
+        qWrapper.classList.add('slide-in');
+
+        const container = document.getElementById('options-container');
+        container.innerHTML = '';
+        
+        q.options.forEach(opt => {
+            const isSelected = userAnswers[currentQuestionIndex] === opt.id;
+            const div = document.createElement('div');
+            div.className = `option-item p-4 rounded-xl font-medium flex items-center shadow-sm active:scale-[0.98] ${isSelected ? 'selected-option' : ''}`;
+            div.innerHTML = `
+                <div class="w-8 h-8 rounded-full flex items-center justify-center mr-3 text-xs font-bold transition-all ${isSelected ? 'bg-blue-600 text-white scale-110' : 'bg-slate-100 text-slate-500'}">
+                    ${opt.id}
+                </div>
+                <span class="text-sm text-slate-700 font-semibold leading-relaxed">${opt.text}</span>
+            `;
+            div.onclick = () => { 
+                playBeep('click');
+                userAnswers[currentQuestionIndex] = opt.id; 
+                renderQuestion(); 
+            };
+            container.appendChild(div);
+        });
+
+        document.getElementById('prev-btn').disabled = currentQuestionIndex === 0;
+        document.getElementById('prev-btn').style.opacity = currentQuestionIndex === 0 ? '0.5' : '1';
+        
+        const nextBtn = document.getElementById('next-btn');
+        if (currentQuestionIndex === questions.length - 1) {
+            nextBtn.innerHTML = `SELESAI <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>`;
+            nextBtn.classList.add('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600');
+        } else {
+            nextBtn.innerHTML = `LANJUT <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>`;
+            nextBtn.classList.remove('bg-gradient-to-r', 'from-emerald-600', 'to-teal-600');
+        }
+    }
+
+    function handleNext() {
+        playBeep('click');
+        if (currentQuestionIndex < questions.length - 1) {
+            currentQuestionIndex++;
+            renderQuestion();
+        } else {
+            // Count completed questions
+            const answeredCount = Object.keys(userAnswers).length;
+            const warningText = document.getElementById('confirm-warning-text');
+            
+            if (answeredCount < questions.length) {
+                warningText.innerHTML = `<span class="text-rose-500 font-bold">Perhatian:</span> Kamu baru menjawab <b>${answeredCount}</b> dari <b>${questions.length}</b> soal. Pastikan semua soal terisi!`;
+            } else {
+                warningText.innerHTML = "Luar biasa! Semua pertanyaan sudah kamu jawab. Tekan KIRIM untuk mengumpulkan.";
+            }
+            
+            document.getElementById('confirm-modal').style.display = 'flex';
+        }
+    }
+
+    function prevQuestion() {
+        playBeep('click');
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            renderQuestion();
+        }
+    }
+
+    function hideConfirm() { 
+        playBeep('click');
+        document.getElementById('confirm-modal').style.display = 'none'; 
+    }
+
+    async function finishExam() {
+        hideConfirm();
+        clearInterval(timerInterval);
+        document.getElementById('loading-text').innerText = "Mengirim Nilai Anda...";
+        document.getElementById('loading-overlay').style.display = 'flex';
+
+        let correct = 0;
+        questions.forEach((q, i) => { if (userAnswers[i] === q.correct) correct++; });
+        const score = Math.round((correct / questions.length) * 100);
+
+        const payload = new URLSearchParams();
+        payload.append('timestamp', new Date().toLocaleString());
+        payload.append('nama', userData.name);
+        payload.append('absen', userData.absen);
+        payload.append('skor', score);
+        payload.append('durasi', document.getElementById('timer').innerText);
+
+        try {
+            await fetch(scriptURL, { method: 'POST', mode: 'no-cors', body: payload });
+            showResult(score, correct);
+        } catch (e) {
+            // Safe fallback in case of no internet/connection blocks
+            showResult(score, correct);
+        } finally {
+            document.getElementById('loading-overlay').style.display = 'none';
+        }
+    }
+
+    function showResult(score, correct) {
+        playBeep('success');
+        document.getElementById('exam-screen').innerHTML = `
+            <div class="flex flex-col items-center justify-center text-center h-full py-4 animate-fade-in my-auto overflow-y-auto">
+                <div class="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mb-4 border border-emerald-100 shadow-inner">
+                    <svg class="w-8 h-8 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                </div>
+                <h1 class="text-xl font-black text-slate-800 mb-0.5 tracking-wide">UJIAN SELESAI</h1>
+                <p class="text-[10px] text-slate-400 font-bold uppercase mb-4">${userData.name} • Absen ${userData.absen}</p>
+                
+                <div class="relative flex items-center justify-center mb-6">
+                    <span class="absolute w-24 h-24 bg-blue-50 rounded-full -z-10 animate-ping opacity-25"></span>
+                    <div class="text-6xl font-black text-blue-600 font-sahabat filter drop-shadow-md">${score}</div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 w-full mb-4">
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase mb-1">Jawaban Benar</div>
+                        <div class="text-xl font-bold text-emerald-500">${correct}</div>
+                    </div>
+                    <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                        <div class="text-[10px] text-slate-400 font-bold uppercase mb-1">Jawaban Salah</div>
+                        <div class="text-xl font-bold text-rose-400">${questions.length - correct}</div>
+                    </div>
+                </div>
+
+                <div class="w-full space-y-2 mb-4">
+                    <button onclick="reviewAnswers()" class="w-full py-3.5 border-2 border-slate-200 text-slate-700 bg-white rounded-xl font-bold text-xs tracking-wider uppercase transition-all hover:bg-slate-50 active:scale-[0.98] flex items-center justify-center gap-2 shadow-sm">
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path></svg>
+                        Tinjau Jawaban (Review)
+                    </button>
+                    
+                    <button onclick="location.reload()" class="btn-nav w-full py-3.5 text-xs tracking-wider font-bold uppercase shadow-md shadow-blue-100 active:scale-[0.98]">
+                        Kembali Ke Menu Utama
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    // REVIEW MODE: Dynamic scrollable list displaying full validation of answers
+    function reviewAnswers() {
+        playBeep('click');
+        let htmlReview = `
+            <div class="flex flex-col h-full animate-fade-in text-left">
+                <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                    <h2 class="font-bold text-slate-800 text-base">Hasil Tinjauan Jawaban</h2>
+                    <button onclick="location.reload()" class="text-xs font-bold text-blue-600 hover:underline uppercase">Selesai</button>
+                </div>
+                <div class="flex-grow overflow-y-auto space-y-4 pr-1 max-h-[580px]">
+        `;
+
+        questions.forEach((q, i) => {
+            const isCorrect = userAnswers[i] === q.correct;
+            const chosenText = q.options.find(o => o.id === userAnswers[i])?.text || '<span class="text-rose-500 font-bold italic">Belum diisi / Terlewati</span>';
+            const correctText = q.options.find(o => o.id === q.correct).text;
+
+            htmlReview += `
+                <div class="p-4 rounded-xl border ${isCorrect ? 'border-emerald-100 bg-emerald-50/50' : 'border-rose-100 bg-rose-50/50'} space-y-2">
+                    <div class="flex items-start justify-between gap-2">
+                        <span class="text-xs font-bold ${isCorrect ? 'text-emerald-700 bg-emerald-100' : 'text-rose-700 bg-rose-100'} px-2.5 py-0.5 rounded-full">
+                            Soal ${i + 1}
+                        </span>
+                        <span class="text-xs font-bold ${isCorrect ? 'text-emerald-600' : 'text-rose-500'}">
+                            ${isCorrect ? 'BENAR ✓' : 'SALAH ✗'}
+                        </span>
+                    </div>
+                    <p class="text-xs font-semibold text-slate-800 leading-relaxed">${q.text}</p>
+                    <div class="text-[11px] space-y-1 mt-2 pt-2 border-t border-dashed ${isCorrect ? 'border-emerald-200' : 'border-rose-200'}">
+                        <div>
+                            <span class="text-slate-400 font-medium">Jawabanmu:</span> 
+                            <span class="${isCorrect ? 'text-emerald-700 font-bold' : 'text-rose-600 font-bold'}">${userAnswers[i] ? userAnswers[i] + '. ' : ''}${chosenText}</span>
+                        </div>
+                        ${!isCorrect ? `
+                        <div>
+                            <span class="text-slate-400 font-medium">Kunci Jawaban:</span> 
+                            <span class="text-emerald-700 font-bold">${q.correct}. ${correctText}</span>
+                        </div>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        htmlReview += `
+                </div>
+                <button onclick="location.reload()" class="btn-nav w-full py-3.5 mt-4 text-xs tracking-wider font-bold uppercase shadow-md shadow-blue-100 active:scale-[0.98]">
+                    Selesai &amp; Kembali Utama
+                </button>
+            </div>
+        `;
+
+        document.getElementById('exam-screen').innerHTML = htmlReview;
+    }
+</script>
+</body>
+</html>
